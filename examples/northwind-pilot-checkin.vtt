@@ -1,0 +1,166 @@
+WEBVTT
+
+00:00:06.000 --> 00:00:11.000
+Priya: Okay, we're recording. This is the Northwind pilot check-in for the week of March eleventh.
+
+00:00:12.000 --> 00:00:18.000
+Priya: Three things on the agenda: the vendor contract, the September ship date, and headcount.
+
+00:00:19.000 --> 00:00:25.000
+Marcus: Before we start, can we add the data retention question? Legal pinged me this morning.
+
+00:00:26.000 --> 00:00:30.000
+Priya: Sure, we'll take it at the end if there's time.
+
+00:00:31.000 --> 00:00:35.000
+Priya: Dana, where did we land on the vendor quote?
+
+00:00:36.000 --> 00:00:42.000
+Dana: It came in at forty-two thousand for the year, which is two over what finance approved.
+
+00:00:43.000 --> 00:00:48.000
+Dana: The overage is entirely the support tier. Their standard tier is business hours only.
+
+00:00:50.000 --> 00:00:55.000
+Marcus: Business hours in which timezone? Because if it's Central European that's useless to us.
+
+00:00:56.000 --> 00:01:01.000
+Dana: Central European, yes. That's exactly why I pushed for the upgraded tier.
+
+00:01:02.000 --> 00:01:08.000
+Priya: So the question is whether we eat two thousand or accept overnight gaps in support.
+
+00:01:09.000 --> 00:01:14.000
+Marcus: During a pilot I'd accept the gaps. We have maybe forty users, all internal.
+
+00:01:16.000 --> 00:01:20.000
+Dana: I'd agree for the pilot. I would not agree for general availability.
+
+00:01:21.000 --> 00:01:28.000
+Priya: Let's do that. Standard tier for the pilot, revisit before GA. Dana, can you go back to them?
+
+00:01:30.000 --> 00:01:35.000
+Dana: Yes. I'll have the revised quote by Thursday and the signature packet Friday.
+
+00:01:36.000 --> 00:01:40.000
+Priya: Who signs now that Ellis has left? That's genuinely unclear to me.
+
+00:01:42.000 --> 00:01:47.000
+Marcus: I think it defaults to Ellis's manager, which is Rahim, but nobody has confirmed that.
+
+00:01:49.000 --> 00:01:54.000
+Priya: Dana, add that to your Thursday note. We need a name, not a guess.
+
+00:01:55.000 --> 00:01:58.000
+Dana: Noted.
+
+00:01:59.000 --> 00:02:03.000
+Priya: Second item. The September ship date. Marcus, you had concerns.
+
+00:02:04.000 --> 00:02:11.000
+Marcus: I do. The integration work is about three weeks of effort and we have four weeks of calendar.
+
+00:02:13.000 --> 00:02:16.000
+Marcus: That's fine if nothing goes wrong. Something always goes wrong.
+
+00:02:18.000 --> 00:02:21.000
+Dana: What's the failure mode you're most worried about?
+
+00:02:22.000 --> 00:02:28.000
+Marcus: The auth handoff. Their SSO is SAML only and ours has been OIDC since the migration.
+
+00:02:29.000 --> 00:02:36.000
+Marcus: We either build a shim or we ask them to support OIDC, and they've said no once already.
+
+00:02:37.000 --> 00:02:40.000
+Priya: How long is the shim?
+
+00:02:42.000 --> 00:02:48.000
+Marcus: Five days if it's clean. Two weeks if we hit token refresh problems, which I expect we will.
+
+00:02:50.000 --> 00:02:56.000
+Priya: So worst case we're at four weeks of work in four weeks of calendar with no slack.
+
+00:02:57.000 --> 00:03:04.000
+Marcus: Correct. And that assumes I'm not pulled onto the incident rotation, which I am, in April.
+
+00:03:05.000 --> 00:03:10.000
+Dana: Could we ship the pilot without SSO? Local accounts for forty internal users?
+
+00:03:11.000 --> 00:03:15.000
+Marcus: Technically yes. Security would have to sign off on an exception.
+
+00:03:16.000 --> 00:03:22.000
+Priya: That feels like the pressure valve. Marcus, can you scope the local-accounts path this week?
+
+00:03:23.000 --> 00:03:28.000
+Marcus: I can have a one-pager by Wednesday with the security exception we'd need.
+
+00:03:30.000 --> 00:03:35.000
+Priya: Good. Decision for today: we hold the September date and we keep pilot scope frozen.
+
+00:03:36.000 --> 00:03:43.000
+Priya: Anything that isn't in the scope doc goes to the October release. No exceptions this time.
+
+00:03:44.000 --> 00:03:49.000
+Dana: Agreed. Last quarter we let three things in and that's why we're here.
+
+00:03:50.000 --> 00:03:54.000
+Priya: Third item, headcount. Finance came back on the second engineer.
+
+00:03:55.000 --> 00:04:00.000
+Priya: It's deferred to January. Not denied, deferred, and that distinction apparently matters to them.
+
+00:04:02.000 --> 00:04:07.000
+Marcus: It matters to them. It doesn't change anything for me between now and September.
+
+00:04:08.000 --> 00:04:14.000
+Priya: I know. I pushed. The answer was that the pilot has to show usage numbers first.
+
+00:04:16.000 --> 00:04:19.000
+Dana: What usage numbers? Has anyone written down the threshold?
+
+00:04:20.000 --> 00:04:27.000
+Priya: No, and that's a problem. I'll ask for a specific number and bring it back next week.
+
+00:04:28.000 --> 00:04:33.000
+Marcus: Please do. Otherwise we'll hit September and be told the numbers weren't good enough.
+
+00:04:35.000 --> 00:04:38.000
+Priya: Fair. I'll get it in writing.
+
+00:04:39.000 --> 00:04:42.000
+Priya: We have four minutes. Marcus, the retention question.
+
+00:04:43.000 --> 00:04:48.000
+Marcus: Legal wants to know how long we keep the transcripts the pilot generates.
+
+00:04:49.000 --> 00:04:55.000
+Marcus: Right now the answer is forever, because nobody set a policy and the default is forever.
+
+00:04:57.000 --> 00:05:02.000
+Dana: That's going to be a problem with the works council too, not just legal.
+
+00:05:03.000 --> 00:05:06.000
+Priya: What's a defensible number?
+
+00:05:07.000 --> 00:05:14.000
+Marcus: Ninety days for raw audio, a year for the derived summaries, is what our peers do.
+
+00:05:15.000 --> 00:05:22.000
+Priya: Write that up as a proposal and I'll take it to legal. Can you do that by end of month?
+
+00:05:24.000 --> 00:05:27.000
+Marcus: Yes. It's a short document.
+
+00:05:28.000 --> 00:05:33.000
+Priya: Okay. To recap: standard support tier for the pilot, September holds, scope is frozen.
+
+00:05:34.000 --> 00:05:39.000
+Priya: Dana has the revised quote and the signer name by Thursday.
+
+00:05:40.000 --> 00:05:45.000
+Priya: Marcus has the local-accounts one-pager Wednesday and the retention proposal by month end.
+
+00:05:46.000 --> 00:05:51.000
+Priya: I'm chasing finance for a written usage threshold. Same time next week.
