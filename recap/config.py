@@ -50,6 +50,9 @@ class LLMConfig:
     backend: str = "ollama"  # ollama | openai (any OpenAI-compatible local server)
     base_url: str = "http://127.0.0.1:11434"
     model: str = "llama3.1:8b"
+    # Optional larger model for the single final synthesis call. The per-chunk
+    # extraction calls, which dominate the runtime, keep using `model`.
+    reduce_model: str | None = None
     temperature: float = 0.2
     num_ctx: int = 8192
     max_output_tokens: int = 2048
@@ -231,6 +234,7 @@ def config_template() -> str:
             "backend": "ollama | openai (LM Studio, llama.cpp server, vLLM ...)",
             "base_url": "must be loopback unless allow_remote_llm = true",
             "model": "any model you have pulled locally",
+            "reduce_model": "optional bigger model for the final summary only",
             "num_ctx": "context window; raise for fewer, larger chunks",
             "api_key_env": "env var holding a key, openai backend only",
         },

@@ -47,7 +47,8 @@ def transcript() -> Transcript:
 
 @pytest.fixture
 def fake_llm():
-    with FakeOllama() as server:
+    # Two models installed, so tests can exercise the split extraction/synthesis path.
+    with FakeOllama(models=("llama3.1:8b", "qwen2.5:32b")) as server:
         yield server
 
 

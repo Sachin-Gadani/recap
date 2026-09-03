@@ -187,12 +187,57 @@ Every option also works as `RECAP_<SECTION>_<KEY>`, e.g. `RECAP_LLM_MODEL=llama3
 
 ### Picking models
 
-| Recording | ASR model | LLM | Notes |
-| --- | --- | --- | --- |
-| Clean 1:1, English | `small.en` | `llama3.1:8b` | The default. ~10 min of CPU per hour of audio. |
-| Conference room, accents | `medium` or `large-v3` | `llama3.1:8b` | Much slower on CPU; worth it on a GPU. |
-| 3+ hours | `distil-large-v3` | `qwen2.5:14b` with `num_ctx = 16384` | Fewer, larger chunks summarise better. |
-| Non-English | `large-v3` | a model that speaks the language | Set `[summary] language` too. |
+Size the LLM to your memory first, then the Whisper model to how messy the audio is.
+
+| Machine | LLM | ASR model |
+| --- | --- | --- |
+| 8-16 GB | `llama3.2:3b` or `llama3.1:8b` | `small.en` |
+| 32 GB | `qwen2.5:14b-instruct`, `num_ctx = 16384` | `medium.en` |
+| 64 GB Apple Silicon | `qwen2.5:32b-instruct-q4_K_M`, `num_ctx = 32768` | `large-v3` |
+| NVIDIA GPU | the largest model that fits **entirely** in VRAM | `large-v3` |
+
+On a discrete GPU, check `ollama ps` — anything less than 100% GPU means the
+model is spilling to system RAM, and the pipeline slows by an order of
+magnitude. Drop a size rather than waiting it out.
+
+Two things matter more than parameter count:
+
+- **A bigger `num_ctx` and `chunk_tokens`.** Going from 8k/2400 to 32k/8000
+  takes a two-hour meeting from ~10 chunks to ~3. Fewer seams where a decision
+  gets split, fewer duplicates to merge, no folding pass, and each excerpt
+  carries enough surrounding conversation to tell a firm decision from someone
+  thinking out loud. It is also *faster* overall, despite the larger context,
+  because there are fewer round trips.
+- **A better ASR model.** Summary quality is capped by transcript quality, and
+  no LLM recovers a misheard name. `small.en` to `large-v3` is a bigger win than
+  any LLM upgrade.
+
+For non-English recordings, use `large-v3`, pick an LLM that speaks the
+language, and set `[summary] language`.
+
+### Two models: fast extraction, careful synthesis
+
+`recap` makes one extraction call per chunk and exactly one synthesis call.
+Extraction is the easy half — pulling decisions and owners out of an excerpt
+into JSON barely troubles a 14B — but you pay its speed once per chunk.
+Synthesis is where a larger model earns its keep, and it happens once.
+
+So point them at different models:
+
+```bash
+recap run meeting.m4a --llm-model qwen2.5:14b --reduce-model llama3.3:70b
+```
+
+```toml
+[llm]
+model = "qwen2.5:14b-instruct"        # N extraction calls
+reduce_model = "llama3.3:70b"         # one synthesis call
+```
+
+You get the big model's judgment exactly where it matters, for one call's worth
+of waiting. Folding, on the rare runs that need it, deliberately stays on the
+fast model — it can run many times. Both models are checked for existence before
+transcription starts, so a typo fails in seconds rather than after an hour.
 
 `recap` also speaks the OpenAI chat API, so LM Studio, `llama.cpp --server`, Jan
 and vLLM work as well:
@@ -239,7 +284,7 @@ Treat the report as a well-organised pointer into the recording, not as evidence
 
 ```bash
 pip install -e ".[dev,whisper]"
-pytest                 # 129 tests, no network, no models needed
+pytest                 # 136 tests, no network, no models needed
 ruff check .
 ```
 

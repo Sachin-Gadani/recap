@@ -123,13 +123,18 @@ def _check_llm(config: Config) -> Check:
         )
         return Check(label, FAIL, str(exc).splitlines()[0], fix=fix)
 
-    if not client._model_installed(models):
-        listed = ", ".join(models[:8]) or "(none installed)"
-        return Check(
-            label, FAIL, f"{config.llm.model!r} not installed; available: {listed}",
-            fix=f"ollama pull {config.llm.model}",
-        )
-    return Check(label, OK, f"{config.llm.base_url} serving {config.llm.model}")
+    wanted = [config.llm.model]
+    if config.llm.reduce_model:
+        wanted.append(config.llm.reduce_model)
+    for model in wanted:
+        if not client.with_model(model)._model_installed(models):
+            listed = ", ".join(models[:8]) or "(none installed)"
+            return Check(
+                label, FAIL, f"{model!r} not installed; available: {listed}",
+                fix=f"ollama pull {model}",
+            )
+    serving = " + ".join(wanted)
+    return Check(label, OK, f"{config.llm.base_url} serving {serving}")
 
 
 def _check_privacy(config: Config) -> Check:

@@ -103,6 +103,8 @@ def build_llm_client(config: Config, check: bool = True) -> BaseClient:
     client = build_client(config.llm, api_key)
     if check:
         client.ensure_ready()
+        if config.llm.reduce_model:
+            client.with_model(config.llm.reduce_model).ensure_ready()
     return client
 
 

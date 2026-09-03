@@ -128,6 +128,16 @@ def _render_notes_appendix(notes: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _summarisation_line(meta: dict[str, Any]) -> str | None:
+    model = meta.get("llm_model")
+    if not model:
+        return None
+    reduce_model = meta.get("llm_reduce_model")
+    if reduce_model and reduce_model != model:
+        model = f"{model} (extraction) + {reduce_model} (summary)"
+    return f"{meta.get('llm_backend')} / {model} at {meta.get('llm_base_url')}"
+
+
 def _render_provenance(meta: dict[str, Any]) -> list[str]:
     if not meta:
         return []
@@ -137,8 +147,7 @@ def _render_provenance(meta: dict[str, Any]) -> list[str]:
         ("Duration", human_duration(float(meta["duration"])) if meta.get("duration") else None),
         ("Transcription", f"{meta.get('asr_backend')} / {meta.get('asr_model')}"
             if meta.get("asr_model") else None),
-        ("Summarisation", f"{meta.get('llm_backend')} / {meta.get('llm_model')} at {meta.get('llm_base_url')}"
-            if meta.get("llm_model") else None),
+        ("Summarisation", _summarisation_line(meta)),
         ("Transcript chunks", meta.get("chunks")),
         ("Fold rounds", meta.get("fold_rounds")),
         ("Detected language", meta.get("language")),

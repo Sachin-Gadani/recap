@@ -8,7 +8,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from .config import LLMConfig
@@ -73,6 +73,12 @@ class BaseClient:
         self.config = config
         self.api_key = api_key
         self.base_url = config.base_url.rstrip("/")
+
+    def with_model(self, model: str) -> BaseClient:
+        """A sibling client for the same server, talking to a different model."""
+        if model == self.config.model:
+            return self
+        return type(self)(replace(self.config, model=model), self.api_key)
 
     # -- to implement in subclasses ----------------------------------------
     def _chat(self, messages: Sequence[Message], json_mode: bool, max_tokens: int | None) -> Completion:

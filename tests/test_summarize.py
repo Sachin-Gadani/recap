@@ -183,3 +183,40 @@ def test_summary_json_roundtrip(transcript, fake_llm, tmp_path):
     assert restored.title == summary.title
     assert restored.action_items == summary.action_items
     assert restored.meta["chunks"] == summary.meta["chunks"]
+
+
+# --- split extraction / synthesis models -----------------------------------
+
+
+def test_reduce_uses_the_bigger_model_only_for_the_final_call(transcript, fake_llm, tmp_path):
+    config = _config(fake_llm, tmp_path)
+    config.llm.model = "llama3.1:8b"
+    config.llm.reduce_model = "qwen2.5:32b"
+    summary = summarize_transcript(transcript, build_client(config.llm), config)
+
+    models = [r["model"] for r in fake_llm.requests]
+    assert models[-1] == "qwen2.5:32b"          # the synthesis call
+    assert set(models[:-1]) == {"llama3.1:8b"}  # every extraction call
+    assert summary.meta["llm_model"] == "llama3.1:8b"
+    assert summary.meta["llm_reduce_model"] == "qwen2.5:32b"
+
+
+def test_one_model_is_used_for_everything_by_default(transcript, fake_llm, tmp_path):
+    config = _config(fake_llm, tmp_path)
+    summary = summarize_transcript(transcript, build_client(config.llm), config)
+    assert {r["model"] for r in fake_llm.requests} == {config.llm.model}
+    assert summary.meta["llm_reduce_model"] == summary.meta["llm_model"]
+
+
+def test_folding_stays_on_the_fast_model(transcript, fake_llm, tmp_path):
+    """Folding can run many times, so it keeps the cheap model deliberately."""
+    config = _config(fake_llm, tmp_path, chunk_tokens=250, fold_batch_size=3)
+    config.llm.model = "llama3.1:8b"
+    config.llm.reduce_model = "qwen2.5:32b"
+    config.llm.num_ctx = 256
+    summary = summarize_transcript(transcript, build_client(config.llm), config)
+    assert summary.meta["fold_rounds"] >= 1
+    fold_models = [
+        r["model"] for r in fake_llm.requests if "NOTES TO MERGE" in r["messages"][-1]["content"]
+    ]
+    assert fold_models and set(fold_models) == {"llama3.1:8b"}

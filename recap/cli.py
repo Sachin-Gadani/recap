@@ -108,6 +108,8 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--compute-type", choices=["auto", "int8", "int8_float16", "float16", "float32"])
     group.add_argument("--llm-backend", choices=["ollama", "openai"])
     group.add_argument("--llm-model", help="local model name, e.g. llama3.1:8b")
+    group.add_argument("--reduce-model",
+                       help="bigger model for the final summary only; extraction stays on --llm-model")
     group.add_argument("--llm-url", help="base URL of the local model server")
     group.add_argument("--num-ctx", type=int, help="LLM context window in tokens")
     group.add_argument("--temperature", type=float)
@@ -134,6 +136,7 @@ def config_from_args(args: argparse.Namespace) -> Config:
         "llm": {
             "backend": getattr(args, "llm_backend", None),
             "model": getattr(args, "llm_model", None),
+            "reduce_model": getattr(args, "reduce_model", None),
             "base_url": getattr(args, "llm_url", None),
             "num_ctx": getattr(args, "num_ctx", None),
             "temperature": getattr(args, "temperature", None),

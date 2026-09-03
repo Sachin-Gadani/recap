@@ -157,3 +157,21 @@ def test_transcript_exports_survive_a_roundtrip(tmp_path, fake_llm, transcript_f
     assert load_transcript(tmp_path / "o.srt").segments
     assert load_transcript(tmp_path / "o.vtt").segments
     assert (tmp_path / "o.transcript.txt").read_text().strip()
+
+
+def test_reduce_model_flag_splits_the_two_passes(tmp_path, fake_llm, transcript_file):
+    code = cli.main(
+        ["summarize", transcript_file, "-o", str(tmp_path / "o"), "--formats", "md",
+         "--reduce-model", "qwen2.5:32b"]
+        + _base_args(fake_llm)
+    )
+    assert code == 0
+    assert "(extraction)" in (tmp_path / "o.md").read_text()
+
+
+def test_a_missing_reduce_model_fails_before_transcription(fake_llm, transcript_file, capsys):
+    code = cli.main(
+        ["summarize", transcript_file, "--reduce-model", "absent:70b"] + _base_args(fake_llm)
+    )
+    assert code == 1
+    assert "ollama pull absent:70b" in capsys.readouterr().err

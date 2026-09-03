@@ -268,14 +268,18 @@ def summarize_transcript(
         say("notes still large after folding; trimming lowest-value entries")
         merged = _trim_notes(merged, budget)
 
-    say("writing executive summary")
-    summary = _reduce(merged, transcript, client, config)
+    reduce_client = client
+    if client.config.reduce_model:
+        reduce_client = client.with_model(client.config.reduce_model)
+    say(f"writing executive summary with {reduce_client.config.model}")
+    summary = _reduce(merged, transcript, reduce_client, config)
     summary.notes = merged
     summary.chunk_notes = chunk_notes
     summary.meta = {
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "llm_backend": client.name,
         "llm_model": client.config.model,
+        "llm_reduce_model": reduce_client.config.model,
         "llm_base_url": client.config.base_url,
         "asr_backend": transcript.asr_backend,
         "asr_model": transcript.asr_model,

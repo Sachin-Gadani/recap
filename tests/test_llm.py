@@ -107,3 +107,17 @@ def test_openai_backend_targets_the_v1_path(fake_llm):
     # The fake server only speaks the ollama API, so this must fail loudly, not silently.
     with pytest.raises(LLMError):
         client.chat([{"role": "user", "content": "hi"}], retries=0)
+
+
+def test_with_model_returns_a_sibling_client(fake_llm):
+    client = _client(fake_llm)
+    sibling = client.with_model("qwen2.5:32b")
+    assert sibling.config.model == "qwen2.5:32b"
+    assert sibling.base_url == client.base_url
+    assert type(sibling) is type(client)
+    assert client.config.model == "llama3.1:8b"  # the original is untouched
+
+
+def test_with_model_is_a_no_op_for_the_same_model(fake_llm):
+    client = _client(fake_llm)
+    assert client.with_model("llama3.1:8b") is client
