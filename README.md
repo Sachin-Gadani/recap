@@ -284,7 +284,7 @@ Treat the report as a well-organised pointer into the recording, not as evidence
 
 ```bash
 pip install -e ".[dev,whisper]"
-pytest                 # 136 tests, no network, no models needed
+pytest                 # 144 tests, no network, no models needed
 ruff check .
 ```
 

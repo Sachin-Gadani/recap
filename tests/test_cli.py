@@ -175,3 +175,43 @@ def test_a_missing_reduce_model_fails_before_transcription(fake_llm, transcript_
     )
     assert code == 1
     assert "ollama pull absent:70b" in capsys.readouterr().err
+
+
+# --- a transcript handed to a command that expects audio --------------------
+
+
+@pytest.mark.parametrize("suffix", [".vtt", ".srt", ".json", ".txt"])
+def test_run_accepts_a_transcript_instead_of_audio(tmp_path, fake_llm, transcript, suffix, capsys):
+    """`recap run notes.vtt` is the obvious thing to type; it must not reach Whisper."""
+    path = tmp_path / f"meeting{suffix}"
+    body = {".vtt": transcript.to_vtt(), ".srt": transcript.to_srt(), ".txt": transcript.to_txt()}
+    if suffix == ".json":
+        transcript.save(path)
+    else:
+        path.write_text(body[suffix])
+
+    code = cli.main(["run", str(path), "-o", str(tmp_path / "o"), "--formats", "md"] + _base_args(fake_llm))
+    assert code == 0
+    assert (tmp_path / "o.md").exists()
+
+
+def test_run_says_why_it_skipped_transcription(tmp_path, fake_llm, transcript, capsys):
+    path = tmp_path / "meeting.vtt"
+    path.write_text(transcript.to_vtt())
+    cli.main(["run", str(path), "-o", str(tmp_path / "o"), "--formats", "md",
+              "--llm-url", fake_llm.base_url, "--llm-model", "llama3.1:8b", "--chunk-tokens", "400"])
+    assert "is a transcript, not audio" in capsys.readouterr().err
+
+
+def test_transcribe_refuses_a_transcript_with_a_usable_fix(tmp_path, capsys):
+    path = tmp_path / "meeting.vtt"
+    path.write_text("WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nhello\n")
+    assert cli.main(["transcribe", str(path), "-q"]) == 1
+    err = capsys.readouterr().err
+    assert "is a transcript, not audio" in err
+    assert "recap summarize" in err
+
+
+def test_a_missing_file_is_reported_before_anything_else(tmp_path, capsys):
+    assert cli.main(["run", str(tmp_path / "absent.m4a"), "-q"]) == 1
+    assert "file not found" in capsys.readouterr().err

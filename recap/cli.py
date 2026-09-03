@@ -13,7 +13,7 @@ from .audio import AudioError
 from .config import Config, ConfigError, config_template, default_config_path, describe, load_config
 from .llm import LLMError
 from .summarize import SummarizeError
-from .transcript import load_transcript
+from .transcript import TRANSCRIPT_SUFFIXES, load_transcript
 from .util import (
     eprint,
     error,
@@ -53,7 +53,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_parser = subparsers.add_parser("run", help="audio in, executive summary out", epilog=EPILOG,
                                        formatter_class=argparse.RawDescriptionHelpFormatter)
-    run_parser.add_argument("audio", type=Path, nargs="?", help="path to the recording")
+    run_parser.add_argument("audio", type=Path, nargs="?",
+                            help="path to the recording (or an existing transcript)")
     run_parser.add_argument("-o", "--output", type=Path, help="output path (extension chosen per format)")
     run_parser.add_argument("--formats", default=",".join(pipeline.DEFAULT_FORMATS),
                             help=f"comma-separated: {', '.join(pipeline.ALL_FORMATS)}")
@@ -166,27 +167,42 @@ def _parse_formats(raw: str) -> tuple[str, ...]:
     return formats or pipeline.DEFAULT_FORMATS
 
 
-def _require_audio(path: Path | None) -> Path:
+def _require_input(path: Path | None) -> Path:
     if path is None:
-        raise ConfigError("no audio file given. Try: recap run meeting.m4a")
+        raise ConfigError("no input file given. Try: recap run meeting.m4a")
     if not path.exists():
-        raise ConfigError(f"audio file not found: {path}")
+        raise ConfigError(f"file not found: {path}")
+    return path
+
+
+def _require_audio(path: Path | None) -> Path:
+    path = _require_input(path)
+    if path.suffix.lower() in TRANSCRIPT_SUFFIXES:
+        raise ConfigError(
+            f"{path.name} is a transcript, not audio.\n"
+            f"Fix: recap summarize {path}"
+        )
     return path
 
 
 def cmd_run(args: argparse.Namespace, config: Config) -> int:
     formats = _parse_formats(args.formats)
-    if args.transcript:
-        source = args.transcript
-    else:
-        source = _require_audio(args.audio)
+    source = _require_input(args.transcript or args.audio)
+    transcript_path = args.transcript
+
+    # `recap run notes.vtt` is the obvious thing to type, so honour it rather
+    # than feeding a text file to Whisper.
+    if transcript_path is None and source.suffix.lower() in TRANSCRIPT_SUFFIXES:
+        transcript_path = source
+        if not args.quiet:
+            info(f"{source.name} is a transcript, not audio - skipping transcription")
 
     result = pipeline.run(
         source=source,
         config=config,
         out_base=args.output.with_suffix("") if args.output else None,
         formats=formats,
-        transcript_path=args.transcript,
+        transcript_path=transcript_path,
         force_transcribe=args.retranscribe,
         use_cache=not args.no_cache,
         include_notes=args.notes,

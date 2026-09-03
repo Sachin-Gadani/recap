@@ -11,7 +11,7 @@ from pathlib import Path
 
 from . import audio as audio_mod
 from .config import ASRConfig
-from .transcript import Segment, Transcript, merge_short_segments
+from .transcript import TRANSCRIPT_SUFFIXES, Segment, Transcript, merge_short_segments
 from .util import fmt_ts, human_duration
 
 ProgressFn = Callable[[float, float, str], None]
@@ -29,6 +29,7 @@ def transcribe(
     on_progress: ProgressFn | None = None,
     audio_sha: str | None = None,
 ) -> Transcript:
+    _reject_transcripts(audio_path)
     backend = config.backend.strip().lower()
     if backend in {"faster-whisper", "faster_whisper", "fw"}:
         transcript = _faster_whisper(audio_path, config, work_dir, on_progress)
@@ -49,6 +50,16 @@ def transcribe(
             "and try --asr-model small or medium."
         )
     return transcript
+
+
+def _reject_transcripts(audio_path: str | Path) -> None:
+    """A transcript handed to Whisper fails deep inside the audio decoder. Catch it here."""
+    path = Path(audio_path)
+    if path.suffix.lower() in TRANSCRIPT_SUFFIXES:
+        raise ASRError(
+            f"{path.name} is a transcript, not audio - there is nothing to transcribe.\n"
+            f"Fix: recap summarize {path}"
+        )
 
 
 def _resolve_device(config: ASRConfig) -> tuple[str, str]:
@@ -91,14 +102,22 @@ def _faster_whisper(
             "The first run downloads the model; after that it is fully offline."
         ) from exc
 
-    segments_iter, info = model.transcribe(
-        str(audio_path),
-        language=config.language,
-        beam_size=config.beam_size,
-        vad_filter=config.vad_filter,
-        initial_prompt=config.initial_prompt,
-        condition_on_previous_text=False,  # avoids runaway repetition on long audio
-    )
+    try:
+        segments_iter, info = model.transcribe(
+            str(audio_path),
+            language=config.language,
+            beam_size=config.beam_size,
+            vad_filter=config.vad_filter,
+            initial_prompt=config.initial_prompt,
+            condition_on_previous_text=False,  # avoids runaway repetition on long audio
+        )
+    except Exception as exc:
+        # The decoder raises whatever PyAV/ffmpeg felt like; none of it is actionable.
+        raise ASRError(
+            f"could not decode {Path(audio_path).name} as audio ({type(exc).__name__}: {exc}).\n"
+            "Check the file plays in another program. If it is already a transcript, "
+            f"use: recap summarize {audio_path}"
+        ) from exc
     total = float(getattr(info, "duration", 0.0) or 0.0)
     segments: list[Segment] = []
     for item in segments_iter:

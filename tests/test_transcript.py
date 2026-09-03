@@ -2,7 +2,13 @@ import json
 
 import pytest
 
-from recap.transcript import Segment, Transcript, load_transcript, merge_short_segments
+from recap.transcript import (
+    TRANSCRIPT_SUFFIXES,
+    Segment,
+    Transcript,
+    load_transcript,
+    merge_short_segments,
+)
 
 
 def test_labelled_text_carries_timestamps_and_speakers(transcript):
@@ -94,3 +100,18 @@ def test_merge_does_not_cross_speakers():
 def test_duration_defaults_to_last_segment():
     t = Transcript(segments=[Segment(0, 5, "hi"), Segment(5, 9, "bye")])
     assert t.duration == 9
+
+
+def test_every_transcript_suffix_actually_loads(tmp_path, transcript):
+    """TRANSCRIPT_SUFFIXES gates routing, so each entry must really be readable."""
+    writers = {
+        ".json": lambda p: transcript.save(p),
+        ".srt": lambda p: p.write_text(transcript.to_srt()),
+        ".vtt": lambda p: p.write_text(transcript.to_vtt()),
+        ".txt": lambda p: p.write_text(transcript.to_txt()),
+    }
+    assert set(writers) == TRANSCRIPT_SUFFIXES
+    for suffix, write in writers.items():
+        path = tmp_path / f"t{suffix}"
+        write(path)
+        assert load_transcript(path).segments

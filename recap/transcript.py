@@ -14,6 +14,9 @@ from .util import estimate_tokens, fmt_ts, fmt_ts_ms, parse_ts
 
 SCHEMA_VERSION = 1
 
+# Extensions load_transcript() understands. Used to tell a transcript from audio.
+TRANSCRIPT_SUFFIXES = {".json", ".srt", ".vtt", ".txt"}
+
 
 @dataclass
 class Segment:
